@@ -101,9 +101,40 @@ func (api *API) HostGetByHost(host string) (res *Host, err error) {
 	return
 }
 
+// HostGetByIP - Gets host by ip only if there is exactly 1 matching host.
+func (api *API) HostGetByIP(ip string) (res *Host, err error) {
+	hosts, err := api.HostsGet(Params{"filter": map[string]string{"ip": ip}})
+	if err != nil {
+		return
+	}
+
+	if len(hosts) == 1 {
+		res = &hosts[0]
+	} else {
+		e := ExpectedOneResult(len(hosts))
+		err = &e
+	}
+	return
+}
+
 // HostsCreate - Wrapper for host.create: https://www.zabbix.com/documentation/2.2/manual/appendix/api/host/create
 func (api *API) HostsCreate(hosts Hosts) (err error) {
 	response, err := api.CallWithError("host.create", hosts)
+	if err != nil {
+		return
+	}
+
+	result := response.Result.(map[string]interface{})
+	hostids := result["hostids"].([]interface{})
+	for i, id := range hostids {
+		hosts[i].ID = id.(string)
+	}
+	return
+}
+
+// HostsUpdate - Wrapper for host.update: https://www.zabbix.com/documentation/3.0/manual/api/reference/host/update
+func (api *API) HostsUpdate(hosts Hosts) (err error) {
+	response, err := api.CallWithError("host.update", hosts)
 	if err != nil {
 		return
 	}
