@@ -1,7 +1,6 @@
-package zabbix_test
+package zabbix
 
 import (
-	. "."
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -14,7 +13,7 @@ func CreateHost(group *HostGroup, t *testing.T) *Host {
 	hosts := Hosts{{
 		Host:       name,
 		Name:       "Name for " + name,
-		GroupIds:   HostGroupIds{{group.GroupId}},
+		GroupIds:   HostGroupIds{{group.ID}},
 		Interfaces: HostInterfaces{iface},
 	}}
 
@@ -47,7 +46,7 @@ func TestHosts(t *testing.T) {
 	}
 
 	host := CreateHost(group, t)
-	if host.HostId == "" || host.Host == "" {
+	if host.ID == "" || host.Host == "" {
 		t.Errorf("Something is empty: %#v", host)
 	}
 	host.GroupIds = nil
@@ -61,7 +60,7 @@ func TestHosts(t *testing.T) {
 		t.Errorf("Hosts are not equal:\n%#v\n%#v", host, host2)
 	}
 
-	host2, err = api.HostGetById(host.HostId)
+	host2, err = api.HostGetByID(host.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

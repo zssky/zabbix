@@ -1,7 +1,6 @@
-package zabbix_test
+package zabbix
 
 import (
-	. "."
 	"log"
 	"math/rand"
 	"net/http"

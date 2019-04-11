@@ -2,57 +2,93 @@ package zabbix
 
 import (
 	"fmt"
+
 	"github.com/AlekSi/reflector"
 )
 
 type (
-	ItemType  int
+	// ItemType - item type
+	ItemType int
+	// ValueType - value type
 	ValueType int
-	DataType  int
+	// DataType - data type
+	DataType int
+	// DeltaType - delta type
 	DeltaType int
 )
 
 const (
-	ZabbixAgent       ItemType = 0
-	SNMPv1Agent       ItemType = 1
-	ZabbixTrapper     ItemType = 2
-	SimpleCheck       ItemType = 3
-	SNMPv2Agent       ItemType = 4
-	ZabbixInternal    ItemType = 5
-	SNMPv3Agent       ItemType = 6
+	// ZabbixAgent - Zabbix agent
+	ZabbixAgent ItemType = 0
+	// SNMPv1Agent - SNMPv1 agent
+	SNMPv1Agent ItemType = 1
+	// ZabbixTrapper - Zabbix trapper
+	ZabbixTrapper ItemType = 2
+	// SimpleCheck - simple check
+	SimpleCheck ItemType = 3
+	// SNMPv2Agent - SNMPv2 agent
+	SNMPv2Agent ItemType = 4
+	// ZabbixInternal - Zabbix internal
+	ZabbixInternal ItemType = 5
+	// SNMPv3Agent - SNMPv3 agent
+	SNMPv3Agent ItemType = 6
+	// ZabbixAgentActive - Zabbix agent (active)
 	ZabbixAgentActive ItemType = 7
-	ZabbixAggregate   ItemType = 8
-	WebItem           ItemType = 9
-	ExternalCheck     ItemType = 10
-	DatabaseMonitor   ItemType = 11
-	IPMIAgent         ItemType = 12
-	SSHAgent          ItemType = 13
-	TELNETAgent       ItemType = 14
-	Calculated        ItemType = 15
-	JMXAgent          ItemType = 16
+	// ZabbixAggregate - Zabbix aggregate
+	ZabbixAggregate ItemType = 8
+	// WebItem - web item
+	WebItem ItemType = 9
+	// ExternalCheck - external check
+	ExternalCheck ItemType = 10
+	// DatabaseMonitor - database monitor
+	DatabaseMonitor ItemType = 11
+	// IPMIAgent - IPMI agent
+	IPMIAgent ItemType = 12
+	// SSHAgent - SSH agent
+	SSHAgent ItemType = 13
+	// TELNETAgent - TELNET agent
+	TELNETAgent ItemType = 14
+	// Calculated - calculated
+	Calculated ItemType = 15
+	// JMXAgent - JMX agent
+	JMXAgent ItemType = 16
+	// SNMPTrap - SNMP trap
+	SNMPTrap ItemType = 17
 
-	Float     ValueType = 0
+	// Float -  numeric float
+	Float ValueType = 0
+	// Character - character
 	Character ValueType = 1
-	Log       ValueType = 2
-	Unsigned  ValueType = 3
-	Text      ValueType = 4
+	// Log - log
+	Log ValueType = 2
+	// Unsigned - numeric unsigned
+	Unsigned ValueType = 3
+	// Text - text
+	Text ValueType = 4
 
-	Decimal     DataType = 0
-	Octal       DataType = 1
+	// Decimal - (default) decimal
+	Decimal DataType = 0
+	// Octal - octal
+	Octal DataType = 1
+	// Hexadecimal - hexadecimal
 	Hexadecimal DataType = 2
-	Boolean     DataType = 3
+	// Boolean - boolean
+	Boolean DataType = 3
 
-	AsIs  DeltaType = 0
+	// AsIs - (default) as is
+	AsIs DeltaType = 0
+	// Speed - Delta, speed per second
 	Speed DeltaType = 1
+	// Delta - Delta, simple change
 	Delta DeltaType = 2
 )
 
-// https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/definitions
+// Item - https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/definitions
 type Item struct {
-	ItemId      string    `json:"itemid,omitempty"`
+	ID          string    `json:"itemid,omitempty"`
 	Delay       int       `json:"delay"`
-	HostId      string    `json:"hostid"`
-	InterfaceId string    `json:"interfaceid,omitempty"`
+	HostID      string    `json:"hostid"`
+	InterfaceID string    `json:"interfaceid,omitempty"`
 	Key         string    `json:"key_"`
 	Name        string    `json:"name"`
 	Type        ItemType  `json:"type"`
@@ -68,9 +104,10 @@ type Item struct {
 	ApplicationIds []string `json:"applications,omitempty"`
 }
 
+// Items - the array of item
 type Items []Item
 
-// Converts slice to map by key. Panics if there are duplicate keys.
+// ByKey - Converts slice to map by key. Panics if there are duplicate keys.
 func (items Items) ByKey() (res map[string]Item) {
 	res = make(map[string]Item, len(items))
 	for _, i := range items {
@@ -83,7 +120,7 @@ func (items Items) ByKey() (res map[string]Item) {
 	return
 }
 
-// Wrapper for item.get https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/get
+// ItemsGet - Wrapper for item.get https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/get
 func (api *API) ItemsGet(params Params) (res Items, err error) {
 	if _, present := params["output"]; !present {
 		params["output"] = "extend"
@@ -97,12 +134,12 @@ func (api *API) ItemsGet(params Params) (res Items, err error) {
 	return
 }
 
-// Gets items by application Id.
-func (api *API) ItemsGetByApplicationId(id string) (res Items, err error) {
+// ItemsGetByApplicationID - Gets items by application Id.
+func (api *API) ItemsGetByApplicationID(id string) (res Items, err error) {
 	return api.ItemsGet(Params{"applicationids": id})
 }
 
-// Wrapper for item.create: https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/create
+// ItemsCreate - Wrapper for item.create: https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/create
 func (api *API) ItemsCreate(items Items) (err error) {
 	response, err := api.CallWithError("item.create", items)
 	if err != nil {
@@ -112,29 +149,29 @@ func (api *API) ItemsCreate(items Items) (err error) {
 	result := response.Result.(map[string]interface{})
 	itemids := result["itemids"].([]interface{})
 	for i, id := range itemids {
-		items[i].ItemId = id.(string)
+		items[i].ID = id.(string)
 	}
 	return
 }
 
-// Wrapper for item.delete: https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/delete
+// ItemsDelete - Wrapper for item.delete: https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/delete
 // Cleans ItemId in all items elements if call succeed.
 func (api *API) ItemsDelete(items Items) (err error) {
 	ids := make([]string, len(items))
 	for i, item := range items {
-		ids[i] = item.ItemId
+		ids[i] = item.ID
 	}
 
 	err = api.ItemsDeleteByIds(ids)
 	if err == nil {
 		for i := range items {
-			items[i].ItemId = ""
+			items[i].ID = ""
 		}
 	}
 	return
 }
 
-// Wrapper for item.delete: https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/delete
+// ItemsDeleteByIds - Wrapper for item.delete: https://www.zabbix.com/documentation/2.2/manual/appendix/api/item/delete
 func (api *API) ItemsDeleteByIds(ids []string) (err error) {
 	response, err := api.CallWithError("item.delete", ids)
 	if err != nil {
